@@ -21,6 +21,21 @@ def euclideanDistance(instance1, instance2):
     return math.sqrt(distance)
 
 
+def removearray(List_arr, arr):
+    print List_arr
+    print arr
+    ind = 0
+    size = len(List_arr)
+    while ind != size and not np.array_equal(List_arr[ind],arr):
+        ind += 1
+    if ind != size:
+        List_arr.pop(ind)
+    else:
+		# print L
+		print arr
+		raise ValueError('array not found in list.')
+
+
 def getRandIndex(y, predictions):
     correct = 0
     for i in range(len(y)):
@@ -29,6 +44,7 @@ def getRandIndex(y, predictions):
 
 	ri = (correct/float(len(y))) 
     return ri
+
 
 def getErrorRate(y, predictions):
     wrong = 0
@@ -74,7 +90,7 @@ def kmeans(k, data, y):
     predictions  = []
 
     # initialize random clusters
-    for c in range(k):
+    for c in range(k): 
         r = random.randint(0, n_data)
         while r in centroid_idx:
             r = random.randint(0, n_data)
@@ -85,6 +101,132 @@ def kmeans(k, data, y):
         cluster.append(y[r])
         cluster_dt.append([])
     
+    last_centroid = centroid
+
+    # determine cluster for each data
+    for x in data:
+        dist = []
+        for i in range(k):
+            d = euclideanDistance(x, centroid[i])
+            dist.append(d)
+
+        min_dist = min(dist)
+        cluster_idx = dist.index(min_dist)
+        cluster_dt[cluster_idx].append(x)
+
+        pred_cluster = cluster[cluster_idx]
+        predictions.append(pred_cluster)
+
+    # measure new centroid means
+    for c in range(k):
+        new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
+
+    print '==== LOOP 1 ===='
+    print 'Last centroid:'
+    print last_centroid
+    print 'New centroid:'
+    print new_centroid
+
+    # centroid movements
+    itr = 2
+    while (not isEqual(last_centroid, new_centroid)):
+        last_centroid = new_centroid
+
+        centroid_idx = []
+        centroid     = []
+        cluster_dt   = []
+        for c in range(k):
+            cluster_dt.append([])
+        predictions  = []
+
+        # determine cluster for each data accroding new cluster
+        for x in data:
+            dist = []
+            for i in range(k):
+                d = euclideanDistance(x, new_centroid[i])
+                dist.append(d)
+
+            min_dist = min(dist)
+            cluster_idx = dist.index(min_dist)
+            cluster_dt[cluster_idx].append(x)
+
+            pred_cluster = cluster[cluster_idx]
+            predictions.append(pred_cluster)
+
+        # measure new centroid means
+        new_centroid = []
+        for c in range(k):
+            new_centroid.append([])
+        for c in range(k):
+            new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
+
+        print 'Result: Not Equal'
+        print
+        print '==== LOOP ', itr,' ===='
+        print 'Last Centroid: ', last_centroid
+        print 'New Centroid: ', new_centroid
+
+        itr += 1
+        
+    print 'Result: Equal'
+    print
+
+    ri = getRandIndex(y, predictions)
+    er = getErrorRate(y, predictions)
+    return ri, er
+
+
+
+# ****************************** Maximin 1985 ******************************
+# Goyal
+
+def kmeans_maximin(k, data, y):
+    n_data       = len(data)-1
+    centroid_idx = []
+    centroid     = []
+    last_centroid= []
+    new_centroid = []
+    cluster      = []
+    cluster_dt   = []
+    
+    predictions  = []
+
+    no_centroid = data
+    no_centroid_y = y
+
+    for i in range(k):
+        new_centroid.append([])
+        cluster_dt.append([])
+
+    # initialize first centroid
+    r = random.randint(0, n_data)
+    centroid_idx.append(r)
+    centroid.append(data[r])
+    cluster.append(y[r])
+    centroid_point = data[r]
+    np.delete(no_centroid, r)
+    np.delete(no_centroid_y, r)
+    
+    # determine next centroid
+    for i in range(k-1):
+        # get fathest instance from last centroid_point
+        dist = []
+        for dt in no_centroid:
+            d = euclideanDistance(dt, centroid_point)
+            dist.append(d)
+
+        max_dist = max(dist)
+        new_centroid_idx = dist.index(max_dist)
+
+        centroid_idx.append(new_centroid_idx)
+        centroid.append(no_centroid[new_centroid_idx])
+        cluster.append(no_centroid_y[new_centroid_idx])
+        
+        np.delete(no_centroid, centroid_point)
+        np.delete(no_centroid_y, centroid_point)
+
+        centroid_point = no_centroid[new_centroid_idx]
+
     last_centroid = centroid
 
     # determine cluster for each data
