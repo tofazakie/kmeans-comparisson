@@ -178,7 +178,7 @@ def kmeans(k, data, y):
 
 
 # ****************************** Maximin 1985 ******************************
-# Goyal
+# Gonzalez
 
 def kmeans_maximin(k, data, y):
     n_data       = len(data)-1
@@ -209,7 +209,7 @@ def kmeans_maximin(k, data, y):
     
     # determine next centroid
     for i in range(k-1):
-        # get fathest instance from last centroid_point
+        # get farthest instance from last centroid_point
         dist = []
         for dt in no_centroid:
             d = euclideanDistance(dt, centroid_point)
@@ -226,6 +226,135 @@ def kmeans_maximin(k, data, y):
         np.delete(no_centroid_y, centroid_point)
 
         centroid_point = no_centroid[new_centroid_idx]
+
+    last_centroid = centroid
+
+    # determine cluster for each data
+    for x in data:
+        dist = []
+        for i in range(k):
+            d = euclideanDistance(x, centroid[i])
+            dist.append(d)
+
+        min_dist = min(dist)
+        cluster_idx = dist.index(min_dist)
+        cluster_dt[cluster_idx].append(x)
+
+        pred_cluster = cluster[cluster_idx]
+        predictions.append(pred_cluster)
+
+    # measure new centroid means
+    for c in range(k):
+        new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
+
+    print '==== LOOP 1 ===='
+    print 'Last centroid:'
+    print last_centroid
+    print 'New centroid:'
+    print new_centroid
+
+    # centroid movements
+    itr = 2
+    while (not isEqual(last_centroid, new_centroid)):
+        last_centroid = new_centroid
+
+        centroid_idx = []
+        centroid     = []
+        cluster_dt   = []
+        for c in range(k):
+            cluster_dt.append([])
+        predictions  = []
+
+        # determine cluster for each data accroding new cluster
+        for x in data:
+            dist = []
+            for i in range(k):
+                d = euclideanDistance(x, new_centroid[i])
+                dist.append(d)
+
+            min_dist = min(dist)
+            cluster_idx = dist.index(min_dist)
+            cluster_dt[cluster_idx].append(x)
+
+            pred_cluster = cluster[cluster_idx]
+            predictions.append(pred_cluster)
+
+        # measure new centroid means
+        new_centroid = []
+        for c in range(k):
+            new_centroid.append([])
+        for c in range(k):
+            new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
+
+        print 'Result: Not Equal'
+        print
+        print '==== LOOP ', itr,' ===='
+        print 'Last Centroid: ', last_centroid
+        print 'New Centroid: ', new_centroid
+
+        itr += 1
+        
+    print 'Result: Equal'
+    print
+
+    ri = getRandIndex(y, predictions)
+    er = getErrorRate(y, predictions)
+    return ri, er
+
+
+
+# ****************************** Al-Daoud 1985 ******************************
+# Al-Daoud
+def al_daoud(k, data, y):
+    n_data       = len(data)-1
+    centroid_idx = []
+    centroid     = []
+    last_centroid= []
+    new_centroid = []
+    cluster      = []
+    cluster_dt   = []
+    subset_data  = []
+    
+    predictions  = []
+
+    for i in range(k):
+        new_centroid.append([])
+        cluster_dt.append([])
+        subset_data.append([])
+
+    # measure cvmax
+    cv = []
+    for c in range(len(data[0])):
+        data_column = [item for sublist in data[:, c:c+1] for item in sublist]
+        cv.append(statistics.stdev(data_column) / statistics.mean(data_column))
+
+    max_cv = max(cv)
+    max_cv_idx = cv.index(max_cv)
+    print 'CV:', cv
+    print 'Max CV Col:', max_cv_idx
+
+    # sort data ordered by max cv column
+    sorted_data = sorted(data, key=lambda x: x[c])
+    # print sorted_data
+
+    # split to subsets
+    subset_n = int(np.floor(len(data) / k))
+        
+    for i in range(k):
+        subset_data[i] = (sorted_data[i*subset_n:subset_n*(i+1)])
+
+    # determine clusters from subset
+    for c in range(k):
+        centro = []
+        for f in range(len(data[0])):
+            print subset_data[c]
+            subset_data = np.asarray(subset_data, dtype=np.float32)
+            centro.append(np.median(subset_data[c][:, f:f+1]))
+            
+        centroid.append(centro)
+        cluster.append(c)
+
+    print centroid
 
     last_centroid = centroid
 
