@@ -36,7 +36,7 @@ def removearray(List_arr, arr):
 		raise ValueError('array not found in list.')
 
 
-def getRandIndex(y, predictions):
+def getAccuracy(y, predictions):
     correct = 0
     for i in range(len(y)):
         if y[i] == predictions[i]:
@@ -45,8 +45,40 @@ def getRandIndex(y, predictions):
 	ri = (correct/float(len(y))) 
     return ri
 
+def getRandIndex(actuals, predictions):
+    set_act, count_act  = np.unique(actuals, return_counts=True)
+    set_pred, count_pred = np.unique(predictions, return_counts=True)
 
-def getErrorRate(y, predictions):
+    count_act.sort()
+    count_pred.sort()
+
+    corrects = 0
+    for i in range(len(set_act)):
+        if(count_pred[i] > count_act[i]):
+            corrects += count_act[i]
+        else:
+            corrects += count_pred[i]
+    
+    ri = (corrects/float(len(actuals))) 
+    return ri
+
+
+def getErrorRate(actuals, predictions):
+    set_act, count_act  = np.unique(actuals, return_counts=True)
+    set_pred, count_pred = np.unique(predictions, return_counts=True)
+
+    count_act.sort()
+    count_pred.sort()
+
+    wrongs = 0
+    for i in range(len(count_act)):
+        wrongs += abs(count_pred[i] - count_act[i])
+    
+    ri = (wrongs/2/float(len(actuals)))  * 100.0
+    return ri
+    
+
+def getErrorRate2(y, predictions):
     wrong = 0
     for j in range(len(y)):
         if y[j] != predictions[j]:
@@ -98,7 +130,8 @@ def kmeans(k, data, y):
         centroid_idx.append(r)
         centroid.append(data[r])
         new_centroid.append([])
-        cluster.append(y[r])
+        # cluster.append(y[r])
+        cluster.append(c)
         cluster_dt.append([])
     
     last_centroid = centroid
@@ -202,7 +235,7 @@ def kmeans_maximin(k, data, y):
     r = random.randint(0, n_data)
     centroid_idx.append(r)
     centroid.append(data[r])
-    cluster.append(y[r])
+    cluster.append(0)
     centroid_point = data[r]
     np.delete(no_centroid, r)
     np.delete(no_centroid_y, r)
@@ -220,7 +253,7 @@ def kmeans_maximin(k, data, y):
 
         centroid_idx.append(new_centroid_idx)
         centroid.append(no_centroid[new_centroid_idx])
-        cluster.append(no_centroid_y[new_centroid_idx])
+        cluster.append(i+1)
         
         np.delete(no_centroid, centroid_point)
         np.delete(no_centroid_y, centroid_point)
