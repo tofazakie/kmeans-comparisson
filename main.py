@@ -21,6 +21,10 @@ ds_iris = datasets.load_iris()
 # print 'Error Rate: ', kmeans_er, '%'
 
 # k-means maximin
-kmeans_maximin_ri, kmeans_maximin_er = al_daoud(3, ds_iris.data, ds_iris.target)
-print 'Rand Index: ', kmeans_maximin_ri
-print 'Error Rate: ', kmeans_maximin_er, '%'
+# kmeans_maximin_ri, kmeans_maximin_er = kmeans_maximin(3, ds_iris.data, ds_iris.target)
+# print 'Rand Index: ', kmeans_maximin_ri
+# print 'Error Rate: ', kmeans_maximin_er, '%'
+
+kmeans_goyal_ri, kmeans_goyal_er = goyal(3, ds_iris.data, ds_iris.target)
+print 'Rand Index: ', kmeans_goyal_ri
+print 'Error Rate: ', kmeans_goyal_er, '%'
