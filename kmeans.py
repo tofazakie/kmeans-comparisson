@@ -1,4 +1,5 @@
 import csv
+from pickle import FALSE
 import random
 import math
 import operator
@@ -19,6 +20,7 @@ def euclideanDistance(instance1, instance2):
 		distance += pow((instance1[x] - instance2[x]), 2)
         
     return math.sqrt(distance)
+
 
 
 def set_cluster(k, cluster, data, centroid, cluster_dt, predictions):
@@ -43,7 +45,47 @@ def set_cluster(k, cluster, data, centroid, cluster_dt, predictions):
 
     return all_datas, cluster_dt, predictions
 
-def getRandIndex(actuals, predictions):
+
+
+def minmax(data):
+    min = np.amin(data)
+    max = np.amax(data)
+    diff = max - min
+    new_data = [(x-min)/diff for x in data]
+
+    return new_data
+
+
+
+def zscore(data):
+    mean = np.average(data)
+    stdev = np.std(data)
+    new_data = [(x-mean)/stdev for x in data]
+
+    return new_data
+
+
+
+def gmean(data):
+    a = np.array(data)
+
+    return a.prod()**(1.0/len(a))
+
+
+
+def normalization_selector(data):
+    mm = minmax(data)
+    zs = zscore(data)
+
+    if gmean(mm) > gmean(zs):
+        return np.array(mm)
+    else:
+        return np.array(zs)
+
+
+
+def getRandIndex(actuals, predictions, verbose=False):
+    n_data = len(actuals)
     set_act, count_act  = np.unique(actuals, return_counts=True)
     set_pred, count_pred = np.unique(predictions, return_counts=True)
 
@@ -56,12 +98,19 @@ def getRandIndex(actuals, predictions):
             corrects += count_act[i]
         else:
             corrects += count_pred[i]
-    
-    ri = (corrects/float(len(actuals))) 
+
+    ri = (corrects/float(n_data))
+    if (verbose):
+        print 'Correct: ', corrects, '/', n_data
+        print 'Rand Index: ', ri
+        print ''
+
     return ri
 
 
-def getErrorRate(actuals, predictions):
+
+def getErrorRate(actuals, predictions, verbose=False):
+    n_data = len(actuals)
     set_act, count_act  = np.unique(actuals, return_counts=True)
     set_pred, count_pred = np.unique(predictions, return_counts=True)
 
@@ -71,16 +120,20 @@ def getErrorRate(actuals, predictions):
     wrongs = 0
     for i in range(len(count_act)):
         wrongs += abs(count_pred[i] - count_act[i])
+
+    er = (wrongs/2/float(n_data))  * 100.0
+
+    if (verbose):
+        print 'Wrongs: ', (wrongs/2), '/', n_data
+        print 'Error Rate: ', er,'%'
+        print
     
-    ri = (wrongs/2/float(len(actuals)))  * 100.0
-    return ri
+    return er
     
 
 
 def isEqual(old_centroid, new_centroid):
     equal = True
-    # print old_centroid
-    # print new_centroid
     for c in range(len(old_centroid)):
         if ((old_centroid[c] != new_centroid[c]).all()):
             equal = False
@@ -90,15 +143,13 @@ def isEqual(old_centroid, new_centroid):
 
 
 
-def getDBI(all_datas, centroids):
+def getDBI(all_datas, centroids, verbose=False):
     n_cluster = len(centroids)
 
     # determine SSW
     ssw = []
     for i in range(n_cluster):
         ssw.append( np.average([t[-2] for t in all_datas if t[-1] == i]) )
-
-    print 'SSW: ', ssw
 
     # determine SSB
     ssb = [[0 for x in range(n_cluster)] for x in range(n_cluster)]
@@ -107,8 +158,6 @@ def getDBI(all_datas, centroids):
             if(i != j):
                 ssb[i][j] = euclideanDistance(centroids[i], centroids[j])
 
-    print 'SSB: ', ssb
-
     # determine ratio
     ratio = [[0 for x in range(n_cluster)] for x in range(n_cluster)]
     for i in range(n_cluster):
@@ -116,14 +165,19 @@ def getDBI(all_datas, centroids):
             if(i != j):
                 ratio[i][j] = (ssw[i] + ssw[j]) / ssb[i][j]
 
-    print 'Ratio: ', ratio
-
     # determine DBI
     dbi = 0
     for i in range(n_cluster):
         dbi += max(ratio[i])
 
     dbi = dbi / n_cluster
+
+    if (verbose):
+        print 'SSW: ', ssw
+        print 'SSB: ', ssb
+        print 'Ratio: ', ratio
+        print 'DBI: ', dbi
+        print ''
 
     return dbi
 
@@ -134,13 +188,13 @@ def getDBI(all_datas, centroids):
 
 
 ############################################################################
-##############################  MAIN PROGRAM  ##############################
+############################  MAIN ALGORITHM  ##############################
 ############################################################################
 
 
 # ****************************** K-Means 1967 ******************************
 # MacQueen
-def kmeans(k, data, y):
+def kmeans(k, data, y, verbose=False):
     n_data       = len(data)-1
     centroid_idx = []
     centroid     = []
@@ -172,11 +226,12 @@ def kmeans(k, data, y):
     for c in range(k):
         new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
-    print '==== LOOP 1 ===='
-    print 'Last centroid:'
-    print last_centroid
-    print 'New centroid:'
-    print new_centroid
+    if(verbose):
+        print '==== LOOP 1 ===='
+        print 'Last centroid:'
+        print last_centroid
+        print 'New centroid:'
+        print new_centroid
 
     # centroid movements
     itr = 2
@@ -201,20 +256,22 @@ def kmeans(k, data, y):
         for c in range(k):
             new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
-        print 'Result: Not Equal'
-        print
-        print '==== LOOP ', itr,' ===='
-        print 'Last Centroid: ', last_centroid
-        print 'New Centroid: ', new_centroid
+        if(verbose):
+            print 'Result: Not Equal'
+            print
+            print '==== LOOP ', itr,' ===='
+            print 'Last Centroid: ', last_centroid
+            print 'New Centroid: ', new_centroid
 
         itr += 1
         
-    print 'Result: Equal'
-    print
+    if(verbose):
+        print 'Result: Equal'
+        print
 
-    ri = getRandIndex(y, predictions)
-    er = getErrorRate(y, predictions)
-    dbi = getDBI(all_datas, new_centroid)
+    ri = getRandIndex(y, predictions, verbose)
+    er = getErrorRate(y, predictions, verbose)
+    dbi = getDBI(all_datas, new_centroid, verbose)
     return ri, er, dbi
 
 
@@ -222,7 +279,7 @@ def kmeans(k, data, y):
 # ****************************** Maximin 1985 ******************************
 # Gonzalez
 
-def kmeans_maximin(k, data, y):
+def kmeans_maximin(k, data, y, verbose=False):
     n_data       = len(data)-1
     centroid_idx = []
     centroid     = []
@@ -277,11 +334,12 @@ def kmeans_maximin(k, data, y):
     for c in range(k):
         new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
-    print '==== LOOP 1 ===='
-    print 'Last centroid:'
-    print last_centroid
-    print 'New centroid:'
-    print new_centroid
+    if(verbose):
+        print '==== LOOP 1 ===='
+        print 'Last centroid:'
+        print last_centroid
+        print 'New centroid:'
+        print new_centroid
 
     # centroid movements
     itr = 2
@@ -305,27 +363,29 @@ def kmeans_maximin(k, data, y):
         for c in range(k):
             new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
-        print 'Result: Not Equal'
-        print
-        print '==== LOOP ', itr,' ===='
-        print 'Last Centroid: ', last_centroid
-        print 'New Centroid: ', new_centroid
+        if(verbose):
+            print 'Result: Not Equal'
+            print
+            print '==== LOOP ', itr,' ===='
+            print 'Last Centroid: ', last_centroid
+            print 'New Centroid: ', new_centroid
 
         itr += 1
-        
-    print 'Result: Equal'
-    print
 
-    ri = getRandIndex(y, predictions)
-    er = getErrorRate(y, predictions)
-    dbi = getDBI(all_datas, new_centroid)
+    if(verbose):    
+        print 'Result: Equal'
+        print
+
+    ri = getRandIndex(y, predictions, verbose)
+    er = getErrorRate(y, predictions, verbose)
+    dbi = getDBI(all_datas, new_centroid, verbose)
     return ri, er, dbi
 
 
 
 # ****************************** Al-Daoud 1985 ******************************
 # Al-Daoud
-def al_daoud(k, data, y):
+def al_daoud(k, data, y, verbose=False):
     centroid     = []
     last_centroid= []
     new_centroid = []
@@ -347,12 +407,13 @@ def al_daoud(k, data, y):
 
     max_cv = max(cv)
     max_cv_idx = cv.index(max_cv)
-    print 'CV:', cv
-    print 'Max CV Col:', max_cv_idx
+
+    if (verbose):
+        print 'CV:', cv
+        print 'Max CV Col:', max_cv_idx
 
     # sort data ordered by max cv column
     sorted_data = sorted(data, key=lambda x: x[max_cv_idx])
-    # print sorted_data
 
     # split to subsets
     subset_n = int(np.floor(len(data) / k))
@@ -371,7 +432,8 @@ def al_daoud(k, data, y):
         centroid.append(centro)
         cluster.append(c)
 
-    print centroid
+    if (verbose):
+        print centroid
 
     last_centroid = centroid
 
@@ -382,18 +444,18 @@ def al_daoud(k, data, y):
     for c in range(k):
         new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
-    print '==== LOOP 1 ===='
-    print 'Last centroid:'
-    print last_centroid
-    print 'New centroid:'
-    print new_centroid
+    if (verbose):
+        print '==== LOOP 1 ===='
+        print 'Last centroid:'
+        print last_centroid
+        print 'New centroid:'
+        print new_centroid
 
     # centroid movements
     itr = 2
     while (not isEqual(last_centroid, new_centroid)):
         last_centroid = new_centroid
 
-        centroid_idx = []
         centroid     = []
         cluster_dt   = []
         for c in range(k):
@@ -410,27 +472,29 @@ def al_daoud(k, data, y):
         for c in range(k):
             new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
-        print 'Result: Not Equal'
-        print
-        print '==== LOOP ', itr,' ===='
-        print 'Last Centroid: ', last_centroid
-        print 'New Centroid: ', new_centroid
+        if (verbose):
+            print 'Result: Not Equal'
+            print
+            print '==== LOOP ', itr,' ===='
+            print 'Last Centroid: ', last_centroid
+            print 'New Centroid: ', new_centroid
 
         itr += 1
         
-    print 'Result: Equal'
-    print
+    if (verbose):
+        print 'Result: Equal'
+        print
 
-    ri = getRandIndex(y, predictions)
-    er = getErrorRate(y, predictions)
-    dbi = getDBI(all_datas, new_centroid)
+    ri = getRandIndex(y, predictions, verbose)
+    er = getErrorRate(y, predictions, verbose)
+    dbi = getDBI(all_datas, new_centroid, verbose)
     return ri, er, dbi
 
 
 
 # ****************************** Goyal 2004 ******************************
 # Goyal
-def goyal(k, data, y):
+def goyal(k, data, y, verbose=False):
     n_data       = len(data)-1
     n_col        = len(data[0])
     centroid     = []
@@ -481,8 +545,6 @@ def goyal(k, data, y):
         centroid.append(centro)
         cluster.append(c)
 
-    print centroid
-
     last_centroid = centroid
 
     # determine cluster for each data
@@ -492,11 +554,12 @@ def goyal(k, data, y):
     for c in range(k):
         new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
-    print '==== LOOP 1 ===='
-    print 'Last centroid:'
-    print last_centroid
-    print 'New centroid:'
-    print new_centroid
+    if (verbose):
+        print '==== LOOP 1 ===='
+        print 'Last centroid:'
+        print last_centroid
+        print 'New centroid:'
+        print new_centroid
 
     # centroid movements
     itr = 2
@@ -520,18 +583,29 @@ def goyal(k, data, y):
         for c in range(k):
             new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
-        print 'Result: Not Equal'
-        print
-        print '==== LOOP ', itr,' ===='
-        print 'Last Centroid: ', last_centroid
-        print 'New Centroid: ', new_centroid
+        if (verbose):
+            print 'Result: Not Equal'
+            print
+            print '==== LOOP ', itr,' ===='
+            print 'Last Centroid: ', last_centroid
+            print 'New Centroid: ', new_centroid
 
         itr += 1
         
-    print 'Result: Equal'
-    print
+    if (verbose):
+        print 'Result: Equal'
+        print
 
-    ri = getRandIndex(y, predictions)
-    er = getErrorRate(y, predictions)
-    dbi = getDBI(all_datas, new_centroid)
+    ri = getRandIndex(y, predictions, verbose)
+    er = getErrorRate(y, predictions, verbose)
+    dbi = getDBI(all_datas, new_centroid, verbose)
     return ri, er, dbi
+
+
+
+# ****************************** Proposed Method ****************************
+# Proposed
+def proposed(k, data, y, verbose=False):
+    new_data = normalization_selector(data)
+
+    return al_daoud(k, new_data, y, verbose)
