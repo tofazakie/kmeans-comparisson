@@ -21,21 +21,6 @@ def euclideanDistance(instance1, instance2):
     return math.sqrt(distance)
 
 
-def removearray(List_arr, arr):
-    print List_arr
-    print arr
-    ind = 0
-    size = len(List_arr)
-    while ind != size and not np.array_equal(List_arr[ind],arr):
-        ind += 1
-    if ind != size:
-        List_arr.pop(ind)
-    else:
-		# print L
-		print arr
-		raise ValueError('array not found in list.')
-
-
 def getAccuracy(y, predictions):
     correct = 0
     for i in range(len(y)):
@@ -78,15 +63,6 @@ def getErrorRate(actuals, predictions):
     return ri
     
 
-def getErrorRate2(y, predictions):
-    wrong = 0
-    for j in range(len(y)):
-        if y[j] != predictions[j]:
-			wrong += 1
-
-	er = (wrong/float(len(y))) * 100.0
-    return er
-
 
 def isEqual(old_centroid, new_centroid):
     equal = True
@@ -98,6 +74,47 @@ def isEqual(old_centroid, new_centroid):
             break
 
     return equal
+
+
+
+def getDBI(all_datas, centroids):
+    n_cluster = len(centroids)
+
+    # determine SSW
+    ssw = []
+    for i in range(n_cluster):
+        ssw.append( np.average([t[-2] for t in all_datas if t[-1] == i]) )
+
+    print 'SSW: ', ssw
+
+    # determine SSB
+    ssb = [[0 for x in range(n_cluster)] for x in range(n_cluster)]
+    for i in range(n_cluster):
+        for j in range(n_cluster):
+            if(i != j):
+                ssb[i][j] = euclideanDistance(centroids[i], centroids[j])
+
+    print 'SSB: ', ssb
+
+    # determine ratio
+    ratio = [[0 for x in range(n_cluster)] for x in range(n_cluster)]
+    for i in range(n_cluster):
+        for j in range(n_cluster):
+            if(i != j):
+                ratio[i][j] = (ssw[i] + ssw[j]) / ssb[i][j]
+
+    print 'Ratio: ', ratio
+
+    # determine DBI
+    dbi = 0
+    for i in range(n_cluster):
+        dbi += max(ratio[i])
+
+    dbi = dbi / n_cluster
+
+    return dbi
+
+
 
 ############################################################################
 
@@ -130,12 +147,12 @@ def kmeans(k, data, y):
         centroid_idx.append(r)
         centroid.append(data[r])
         new_centroid.append([])
-        # cluster.append(y[r])
         cluster.append(c)
         cluster_dt.append([])
     
     last_centroid = centroid
 
+    all_datas = []
     # determine cluster for each data
     for x in data:
         dist = []
@@ -149,6 +166,11 @@ def kmeans(k, data, y):
 
         pred_cluster = cluster[cluster_idx]
         predictions.append(pred_cluster)
+
+        dt = x.tolist()
+        dt.append(min_dist)
+        dt.append(pred_cluster)
+        all_datas.append(dt)
 
     # measure new centroid means
     for c in range(k):
@@ -171,8 +193,9 @@ def kmeans(k, data, y):
         for c in range(k):
             cluster_dt.append([])
         predictions  = []
+        all_datas    = []
 
-        # determine cluster for each data accroding new cluster
+        # determine cluster for each data according new cluster
         for x in data:
             dist = []
             for i in range(k):
@@ -185,6 +208,11 @@ def kmeans(k, data, y):
 
             pred_cluster = cluster[cluster_idx]
             predictions.append(pred_cluster)
+
+            dt = x.tolist()
+            dt.append(min_dist)
+            dt.append(pred_cluster)
+            all_datas.append(dt)
 
         # measure new centroid means
         new_centroid = []
@@ -206,7 +234,8 @@ def kmeans(k, data, y):
 
     ri = getRandIndex(y, predictions)
     er = getErrorRate(y, predictions)
-    return ri, er
+    dbi = getDBI(all_datas, new_centroid)
+    return ri, er, dbi
 
 
 
@@ -263,6 +292,7 @@ def kmeans_maximin(k, data, y):
     last_centroid = centroid
 
     # determine cluster for each data
+    all_datas = []
     for x in data:
         dist = []
         for i in range(k):
@@ -275,6 +305,11 @@ def kmeans_maximin(k, data, y):
 
         pred_cluster = cluster[cluster_idx]
         predictions.append(pred_cluster)
+
+        dt = x.tolist()
+        dt.append(min_dist)
+        dt.append(pred_cluster)
+        all_datas.append(dt)
 
     # measure new centroid means
     for c in range(k):
@@ -299,6 +334,7 @@ def kmeans_maximin(k, data, y):
         predictions  = []
 
         # determine cluster for each data accroding new cluster
+        all_datas = []
         for x in data:
             dist = []
             for i in range(k):
@@ -311,6 +347,11 @@ def kmeans_maximin(k, data, y):
 
             pred_cluster = cluster[cluster_idx]
             predictions.append(pred_cluster)
+
+            dt = x.tolist()
+            dt.append(min_dist)
+            dt.append(pred_cluster)
+            all_datas.append(dt)
 
         # measure new centroid means
         new_centroid = []
@@ -332,15 +373,14 @@ def kmeans_maximin(k, data, y):
 
     ri = getRandIndex(y, predictions)
     er = getErrorRate(y, predictions)
-    return ri, er
+    dbi = getDBI(all_datas, new_centroid)
+    return ri, er, dbi
 
 
 
 # ****************************** Al-Daoud 1985 ******************************
 # Al-Daoud
 def al_daoud(k, data, y):
-    n_data       = len(data)-1
-    centroid_idx = []
     centroid     = []
     last_centroid= []
     new_centroid = []
@@ -392,6 +432,7 @@ def al_daoud(k, data, y):
     last_centroid = centroid
 
     # determine cluster for each data
+    all_datas = []
     for x in data:
         dist = []
         for i in range(k):
@@ -404,6 +445,11 @@ def al_daoud(k, data, y):
 
         pred_cluster = cluster[cluster_idx]
         predictions.append(pred_cluster)
+
+        dt = x.tolist()
+        dt.append(min_dist)
+        dt.append(pred_cluster)
+        all_datas.append(dt)
 
     # measure new centroid means
     for c in range(k):
@@ -428,6 +474,7 @@ def al_daoud(k, data, y):
         predictions  = []
 
         # determine cluster for each data according new cluster
+        all_datas = []
         for x in data:
             dist = []
             for i in range(k):
@@ -440,6 +487,11 @@ def al_daoud(k, data, y):
 
             pred_cluster = cluster[cluster_idx]
             predictions.append(pred_cluster)
+
+            dt = x.tolist()
+            dt.append(min_dist)
+            dt.append(pred_cluster)
+            all_datas.append(dt)
 
         # measure new centroid means
         new_centroid = []
@@ -461,7 +513,8 @@ def al_daoud(k, data, y):
 
     ri = getRandIndex(y, predictions)
     er = getErrorRate(y, predictions)
-    return ri, er
+    dbi = getDBI(all_datas, new_centroid)
+    return ri, er, dbi
 
 
 
@@ -500,7 +553,7 @@ def goyal(k, data, y):
         full.append(d)
         data_completed.append(full)
 
-    # sort data ordered by max cv column
+    # sort data ordered by distance to origin
     sorted_data = sorted(data_completed, key=lambda x: x[-1])
 
     # split to subsets
@@ -525,6 +578,7 @@ def goyal(k, data, y):
     last_centroid = centroid
 
     # determine cluster for each data
+    all_datas = []
     for x in data:
         dist = []
         for i in range(k):
@@ -537,6 +591,11 @@ def goyal(k, data, y):
 
         pred_cluster = cluster[cluster_idx]
         predictions.append(pred_cluster)
+
+        dt = x.tolist()
+        dt.append(min_dist)
+        dt.append(pred_cluster)
+        all_datas.append(dt)
 
     # measure new centroid means
     for c in range(k):
@@ -561,6 +620,7 @@ def goyal(k, data, y):
         predictions  = []
 
         # determine cluster for each data accroding new cluster
+        all_datas = []
         for x in data:
             dist = []
             for i in range(k):
@@ -573,6 +633,11 @@ def goyal(k, data, y):
 
             pred_cluster = cluster[cluster_idx]
             predictions.append(pred_cluster)
+
+            dt = x.tolist()
+            dt.append(min_dist)
+            dt.append(pred_cluster)
+            all_datas.append(dt)
 
         # measure new centroid means
         new_centroid = []
@@ -594,4 +659,5 @@ def goyal(k, data, y):
 
     ri = getRandIndex(y, predictions)
     er = getErrorRate(y, predictions)
-    return ri, er
+    dbi = getDBI(all_datas, new_centroid)
+    return ri, er, dbi
