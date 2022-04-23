@@ -21,14 +21,27 @@ def euclideanDistance(instance1, instance2):
     return math.sqrt(distance)
 
 
-def getAccuracy(y, predictions):
-    correct = 0
-    for i in range(len(y)):
-        if y[i] == predictions[i]:
-			correct += 1
+def set_cluster(k, cluster, data, centroid, cluster_dt, predictions):
+    all_datas = []
+    for x in data:
+        dist = []
+        for i in range(k):
+            d = euclideanDistance(x, centroid[i])
+            dist.append(d)
 
-	ri = (correct/float(len(y))) 
-    return ri
+        min_dist = min(dist)
+        cluster_idx = dist.index(min_dist)
+        cluster_dt[cluster_idx].append(x)
+
+        pred_cluster = cluster[cluster_idx]
+        predictions.append(pred_cluster)
+
+        dt = x.tolist()
+        dt.append(min_dist)
+        dt.append(pred_cluster)
+        all_datas.append(dt)
+
+    return all_datas, cluster_dt, predictions
 
 def getRandIndex(actuals, predictions):
     set_act, count_act  = np.unique(actuals, return_counts=True)
@@ -135,7 +148,6 @@ def kmeans(k, data, y):
     new_centroid = []
     cluster      = []
     cluster_dt   = []
-    
     predictions  = []
 
     # initialize random clusters
@@ -154,23 +166,7 @@ def kmeans(k, data, y):
 
     all_datas = []
     # determine cluster for each data
-    for x in data:
-        dist = []
-        for i in range(k):
-            d = euclideanDistance(x, centroid[i])
-            dist.append(d)
-
-        min_dist = min(dist)
-        cluster_idx = dist.index(min_dist)
-        cluster_dt[cluster_idx].append(x)
-
-        pred_cluster = cluster[cluster_idx]
-        predictions.append(pred_cluster)
-
-        dt = x.tolist()
-        dt.append(min_dist)
-        dt.append(pred_cluster)
-        all_datas.append(dt)
+    all_datas, cluster_dt, predictions = set_cluster(k, cluster, data, centroid, cluster_dt, predictions)
 
     # measure new centroid means
     for c in range(k):
@@ -195,24 +191,8 @@ def kmeans(k, data, y):
         predictions  = []
         all_datas    = []
 
-        # determine cluster for each data according new cluster
-        for x in data:
-            dist = []
-            for i in range(k):
-                d = euclideanDistance(x, new_centroid[i])
-                dist.append(d)
-
-            min_dist = min(dist)
-            cluster_idx = dist.index(min_dist)
-            cluster_dt[cluster_idx].append(x)
-
-            pred_cluster = cluster[cluster_idx]
-            predictions.append(pred_cluster)
-
-            dt = x.tolist()
-            dt.append(min_dist)
-            dt.append(pred_cluster)
-            all_datas.append(dt)
+        # determine cluster for each data according new centroid
+        all_datas, cluster_dt, predictions = set_cluster(k, cluster, data, new_centroid, cluster_dt, predictions)
 
         # measure new centroid means
         new_centroid = []
@@ -250,7 +230,6 @@ def kmeans_maximin(k, data, y):
     new_centroid = []
     cluster      = []
     cluster_dt   = []
-    
     predictions  = []
 
     no_centroid = data
@@ -292,24 +271,7 @@ def kmeans_maximin(k, data, y):
     last_centroid = centroid
 
     # determine cluster for each data
-    all_datas = []
-    for x in data:
-        dist = []
-        for i in range(k):
-            d = euclideanDistance(x, centroid[i])
-            dist.append(d)
-
-        min_dist = min(dist)
-        cluster_idx = dist.index(min_dist)
-        cluster_dt[cluster_idx].append(x)
-
-        pred_cluster = cluster[cluster_idx]
-        predictions.append(pred_cluster)
-
-        dt = x.tolist()
-        dt.append(min_dist)
-        dt.append(pred_cluster)
-        all_datas.append(dt)
+    all_datas, cluster_dt, predictions = set_cluster(k, cluster, data, centroid, cluster_dt, predictions)
 
     # measure new centroid means
     for c in range(k):
@@ -333,25 +295,8 @@ def kmeans_maximin(k, data, y):
             cluster_dt.append([])
         predictions  = []
 
-        # determine cluster for each data accroding new cluster
-        all_datas = []
-        for x in data:
-            dist = []
-            for i in range(k):
-                d = euclideanDistance(x, new_centroid[i])
-                dist.append(d)
-
-            min_dist = min(dist)
-            cluster_idx = dist.index(min_dist)
-            cluster_dt[cluster_idx].append(x)
-
-            pred_cluster = cluster[cluster_idx]
-            predictions.append(pred_cluster)
-
-            dt = x.tolist()
-            dt.append(min_dist)
-            dt.append(pred_cluster)
-            all_datas.append(dt)
+        # determine cluster for each data accroding new centroid
+        all_datas, cluster_dt, predictions = set_cluster(k, cluster, data, new_centroid, cluster_dt, predictions)
 
         # measure new centroid means
         new_centroid = []
@@ -387,7 +332,6 @@ def al_daoud(k, data, y):
     cluster      = []
     cluster_dt   = []
     subset_data  = []
-    
     predictions  = []
 
     for i in range(k):
@@ -432,24 +376,7 @@ def al_daoud(k, data, y):
     last_centroid = centroid
 
     # determine cluster for each data
-    all_datas = []
-    for x in data:
-        dist = []
-        for i in range(k):
-            d = euclideanDistance(x, centroid[i])
-            dist.append(d)
-
-        min_dist = min(dist)
-        cluster_idx = dist.index(min_dist)
-        cluster_dt[cluster_idx].append(x)
-
-        pred_cluster = cluster[cluster_idx]
-        predictions.append(pred_cluster)
-
-        dt = x.tolist()
-        dt.append(min_dist)
-        dt.append(pred_cluster)
-        all_datas.append(dt)
+    all_datas, cluster_dt, predictions = set_cluster(k, cluster, data, centroid, cluster_dt, predictions)
 
     # measure new centroid means
     for c in range(k):
@@ -473,25 +400,8 @@ def al_daoud(k, data, y):
             cluster_dt.append([])
         predictions  = []
 
-        # determine cluster for each data according new cluster
-        all_datas = []
-        for x in data:
-            dist = []
-            for i in range(k):
-                d = euclideanDistance(x, new_centroid[i])
-                dist.append(d)
-
-            min_dist = min(dist)
-            cluster_idx = dist.index(min_dist)
-            cluster_dt[cluster_idx].append(x)
-
-            pred_cluster = cluster[cluster_idx]
-            predictions.append(pred_cluster)
-
-            dt = x.tolist()
-            dt.append(min_dist)
-            dt.append(pred_cluster)
-            all_datas.append(dt)
+        # determine cluster for each data according new centroid
+        all_datas, cluster_dt, predictions = set_cluster(k, cluster, data, new_centroid, cluster_dt, predictions)
 
         # measure new centroid means
         new_centroid = []
@@ -523,7 +433,6 @@ def al_daoud(k, data, y):
 def goyal(k, data, y):
     n_data       = len(data)-1
     n_col        = len(data[0])
-    centroid_idx = []
     centroid     = []
     last_centroid= []
     new_centroid = []
@@ -531,7 +440,6 @@ def goyal(k, data, y):
     cluster_dt   = []
     subset_data  = []
     origin       = []
-    
     predictions  = []
 
     for i in range(k):
@@ -578,24 +486,7 @@ def goyal(k, data, y):
     last_centroid = centroid
 
     # determine cluster for each data
-    all_datas = []
-    for x in data:
-        dist = []
-        for i in range(k):
-            d = euclideanDistance(x, centroid[i])
-            dist.append(d)
-
-        min_dist = min(dist)
-        cluster_idx = dist.index(min_dist)
-        cluster_dt[cluster_idx].append(x)
-
-        pred_cluster = cluster[cluster_idx]
-        predictions.append(pred_cluster)
-
-        dt = x.tolist()
-        dt.append(min_dist)
-        dt.append(pred_cluster)
-        all_datas.append(dt)
+    all_datas, cluster_dt, predictions = set_cluster(k, cluster, data, centroid, cluster_dt, predictions)
 
     # measure new centroid means
     for c in range(k):
@@ -620,24 +511,7 @@ def goyal(k, data, y):
         predictions  = []
 
         # determine cluster for each data accroding new cluster
-        all_datas = []
-        for x in data:
-            dist = []
-            for i in range(k):
-                d = euclideanDistance(x, new_centroid[i])
-                dist.append(d)
-
-            min_dist = min(dist)
-            cluster_idx = dist.index(min_dist)
-            cluster_dt[cluster_idx].append(x)
-
-            pred_cluster = cluster[cluster_idx]
-            predictions.append(pred_cluster)
-
-            dt = x.tolist()
-            dt.append(min_dist)
-            dt.append(pred_cluster)
-            all_datas.append(dt)
+        all_datas, cluster_dt, predictions = set_cluster(k, cluster, data, new_centroid, cluster_dt, predictions)
 
         # measure new centroid means
         new_centroid = []
