@@ -5,6 +5,8 @@ import math
 import operator
 import numpy as np
 from scipy.spatial import distance
+# from statistics import geometric_mean
+from scipy.stats.mstats import gmean
 from sklearn.metrics import f1_score
 import statistics
 import pandas as pd
@@ -53,7 +55,7 @@ def minmax(data):
     diff = max - min
     new_data = [(x-min)/diff for x in data]
 
-    return new_data
+    return np.array(new_data)
 
 
 
@@ -62,25 +64,41 @@ def zscore(data):
     stdev = np.std(data)
     new_data = [(x-mean)/stdev for x in data]
 
-    return new_data
+    return np.array(new_data)
 
 
 
-def gmean(data):
-    a = np.array(data)
-
+def geo_mean(iterable):
+    a = np.array(iterable)
     return a.prod()**(1.0/len(a))
+
+def geo_mean_overflow(iterable):
+    # print iterable
+    # it = np.log(iterable)
+    # me = it.mean()
+    # ex = np.exp(me)
+
+    # print it, iterable, me, ex
+
+    # return ex
+    return np.exp(np.log(iterable).mean())
 
 
 
 def normalization_selector(data):
     mm = minmax(data)
     zs = zscore(data)
+    
+    g_mm = geo_mean(mm)
+    g_zs = geo_mean(zs)
 
-    if gmean(mm) > gmean(zs):
-        return np.array(mm)
+    # print g_mm
+    # print g_zs
+
+    if g_mm >= g_zs:
+        return mm
     else:
-        return np.array(zs)
+        return zs
 
 
 
@@ -227,6 +245,8 @@ def kmeans(k, data, y, verbose=False):
         new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
     if(verbose):
+        print '*** K-Means ***'
+        print ''
         print '==== LOOP 1 ===='
         print 'Last centroid:'
         print last_centroid
@@ -272,7 +292,7 @@ def kmeans(k, data, y, verbose=False):
     ri = getRandIndex(y, predictions, verbose)
     er = getErrorRate(y, predictions, verbose)
     dbi = getDBI(all_datas, new_centroid, verbose)
-    return ri, er, dbi
+    return dbi, ri, er
 
 
 
@@ -335,6 +355,8 @@ def kmeans_maximin(k, data, y, verbose=False):
         new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
     if(verbose):
+        print '*** K-Means Maximin ***'
+        print ''
         print '==== LOOP 1 ===='
         print 'Last centroid:'
         print last_centroid
@@ -379,7 +401,7 @@ def kmeans_maximin(k, data, y, verbose=False):
     ri = getRandIndex(y, predictions, verbose)
     er = getErrorRate(y, predictions, verbose)
     dbi = getDBI(all_datas, new_centroid, verbose)
-    return ri, er, dbi
+    return dbi, ri, er
 
 
 
@@ -409,6 +431,8 @@ def al_daoud(k, data, y, verbose=False):
     max_cv_idx = cv.index(max_cv)
 
     if (verbose):
+        print '*** Al-Daoud ***'
+        print ''
         print 'CV:', cv
         print 'Max CV Col:', max_cv_idx
 
@@ -488,7 +512,7 @@ def al_daoud(k, data, y, verbose=False):
     ri = getRandIndex(y, predictions, verbose)
     er = getErrorRate(y, predictions, verbose)
     dbi = getDBI(all_datas, new_centroid, verbose)
-    return ri, er, dbi
+    return dbi, ri, er
 
 
 
@@ -555,6 +579,8 @@ def goyal(k, data, y, verbose=False):
         new_centroid[c] = np.array(cluster_dt[c]).mean(axis=0)
 
     if (verbose):
+        print '*** Goyal ***'
+        print ''
         print '==== LOOP 1 ===='
         print 'Last centroid:'
         print last_centroid
@@ -599,7 +625,7 @@ def goyal(k, data, y, verbose=False):
     ri = getRandIndex(y, predictions, verbose)
     er = getErrorRate(y, predictions, verbose)
     dbi = getDBI(all_datas, new_centroid, verbose)
-    return ri, er, dbi
+    return dbi, ri, er
 
 
 
@@ -607,5 +633,6 @@ def goyal(k, data, y, verbose=False):
 # Proposed
 def proposed(k, data, y, verbose=False):
     new_data = normalization_selector(data)
+    # print new_data
 
-    return al_daoud(k, new_data, y, verbose)
+    return goyal(k, new_data, y, verbose)
