@@ -27,12 +27,9 @@ def euclideanDistance(instance1, instance2):
 
 def set_cluster(k, cluster, data, centroid, cluster_dt, predictions):
     all_datas = []
-    # print 'Set Cluster = ', centroid
     for x in data:
         dist = []
         for i in range(k):
-            # print x
-            # print centroid[i]
             if (isinstance(centroid[i], (list, np.ndarray))):
                 d = euclideanDistance(x, centroid[i])
             else:
@@ -103,6 +100,11 @@ def getRandIndex(actuals, predictions, verbose=False):
     set_act, count_act  = np.unique(actuals, return_counts=True)
     set_pred, count_pred = np.unique(predictions, return_counts=True)
 
+    if(len(count_pred) < len(count_act)):
+        diff = len(count_act) - len(count_pred)
+        for i in range(diff):
+            count_pred = np.append(count_pred, 0)
+
     count_act.sort()
     count_pred.sort()
 
@@ -127,6 +129,11 @@ def getErrorRate(actuals, predictions, verbose=False):
     n_data = len(actuals)
     set_act, count_act  = np.unique(actuals, return_counts=True)
     set_pred, count_pred = np.unique(predictions, return_counts=True)
+
+    if(len(count_pred) < len(count_act)):
+        diff = len(count_act) - len(count_pred)
+        for i in range(diff):
+            count_pred = np.append(count_pred, 0)
 
     count_act.sort()
     count_pred.sort()
@@ -159,7 +166,10 @@ def isEqual(old_centroid, new_centroid):
 
 
 def getDBI(all_datas, centroids, verbose=False):
-    n_cluster = len(centroids)
+    n_cluster = 0
+    for c in range(len(centroids)):
+        if (isinstance(centroids[c], (list, np.ndarray))):
+            n_cluster += 1
 
     # determine SSW
     ssw = []
