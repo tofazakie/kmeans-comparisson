@@ -10,7 +10,7 @@ import pandas as pd
 
 
 # load datasets
-all_datasets = [None] * 14
+all_datasets = [None] * 22
 all_datasets[0] = datasets.load_iris() # 150 - 4
 all_datasets[1] = datasets.load_wine() # 178 - 13
 all_datasets[2] = datasets.load_sonar() # 208 - 60
@@ -27,12 +27,24 @@ all_datasets[11] = datasets.load_pima_indian() # 768 - 8
 all_datasets[12] = datasets.load_vehicle() # 846 - 18
 all_datasets[13] = datasets.load_vowel() # 990 - 11
 
-datasets_name = ['IRIS', 'WINE', 'SONAR', 'SEEDS', 'GLASS', 'THYROID', 'HABERMAN', 'E. COLI', 'IONOSPHERE', 'BALANCE', 'BREASTCANCER', 'PIMA INDIAN', 'VEHICLE', 'VOWEL']
-#                                   1  1           1  1
-selected_datasets = [1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+all_datasets[14] = datasets.load_hepatitis() #80 - 19
+all_datasets[15] = datasets.load_australian() #690 - 14
+all_datasets[16] = datasets.load_blood() #747 - 4
+all_datasets[17] = datasets.load_audit() #775 - 17
+all_datasets[18] = datasets.load_mammographic() #830 - 5
+
+all_datasets[19] = datasets.load_german() #1000 - 24
+all_datasets[20] = datasets.load_biodeg() #1055 - 41
+all_datasets[21] = datasets.load_diabetic() #1151 - 19
+
+datasets_name = ['IRIS', 'WINE', 'SONAR', 'SEEDS', 'GLASS',      'THYROID', 'HABERMAN', 'E. COLI', 'IONOSPHERE', 'BALANCE',    'BREASTCANCER', 'PIMA INDIAN', 'VEHICLE', 'VOWEL']
+datasets_name += ['HEPATITIS', 'AUSTRALIAN', 'BLOOD', 'AUDIT', 'MAMMOGRAPHIC',    'GERMAN', 'BIODEG', 'DIABETIC']
+#                                      1  1              1  1
+# selected_datasets = [1, 1, 1, 1, 0,    1, 1, 0, 1, 0,    1, 0, 0, 0,     0, 0, 1, 1, 0,    0, 0, 0]
+selected_datasets = [0, 0, 0, 0, 1,    1, 0, 0, 0, 0,    0, 1, 0, 0,     1, 1, 0, 0, 1,    1, 1, 1]
 
 cluster_methods_name = [ 'kmeans', 'maximin', 'al-daoud', 'goyal', 'proposed']
-cluster_methods      = [        1,         1,          1,       1,          1]
+cluster_methods      = [        0,         1,          0,       0,          0]
 
 cols = []
 for i in range(len(cluster_methods)):
@@ -122,7 +134,7 @@ for i in range(len(all_datasets)):
         print '> K-Means finished'
 
     if(cluster_methods[1]):
-        d_maximin, r_maximin, e_maximin = kmeans_maximin(k, dataset.data, dataset.target)
+        d_maximin, r_maximin, e_maximin = kmeans_maximin(k, dataset.data, dataset.target, True)
         dbi_maximin.append(d_maximin)
         ri_maximin.append(r_maximin)
         er_maximin.append(e_maximin)

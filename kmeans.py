@@ -27,10 +27,17 @@ def euclideanDistance(instance1, instance2):
 
 def set_cluster(k, cluster, data, centroid, cluster_dt, predictions):
     all_datas = []
+    # print 'Set Cluster = ', centroid
     for x in data:
         dist = []
         for i in range(k):
-            d = euclideanDistance(x, centroid[i])
+            # print x
+            # print centroid[i]
+            if (isinstance(centroid[i], (list, np.ndarray))):
+                d = euclideanDistance(x, centroid[i])
+            else:
+                d = 999999
+
             dist.append(d)
 
         min_dist = min(dist)
@@ -73,14 +80,6 @@ def geo_mean(iterable):
     return a.prod()**(1.0/len(a))
 
 def geo_mean_overflow(iterable):
-    # print iterable
-    # it = np.log(iterable)
-    # me = it.mean()
-    # ex = np.exp(me)
-
-    # print it, iterable, me, ex
-
-    # return ex
     return np.exp(np.log(iterable).mean())
 
 
@@ -92,13 +91,10 @@ def normalization_selector(data):
     g_mm = geo_mean(mm)
     g_zs = geo_mean(zs)
 
-    # print g_mm
-    # print g_zs
-
-    if g_mm >= g_zs:
-        return mm
-    else:
+    if g_zs > g_mm:
         return zs
+    else:
+        return mm
 
 
 
@@ -153,9 +149,10 @@ def getErrorRate(actuals, predictions, verbose=False):
 def isEqual(old_centroid, new_centroid):
     equal = True
     for c in range(len(old_centroid)):
-        if ((old_centroid[c] != new_centroid[c]).all()):
-            equal = False
-            break
+        if ((isinstance(old_centroid[c], (list, np.ndarray))) and (isinstance(new_centroid[c], (list, np.ndarray)))):
+            if ((old_centroid[c] != new_centroid[c]).all()):
+                equal = False
+                break
 
     return equal
 
@@ -357,6 +354,7 @@ def kmeans_maximin(k, data, y, verbose=False):
     if(verbose):
         print '*** K-Means Maximin ***'
         print ''
+        print 'K= ', k
         print '==== LOOP 1 ===='
         print 'Last centroid:'
         print last_centroid
